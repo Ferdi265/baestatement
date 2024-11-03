@@ -6,10 +6,25 @@ import re
 
 @dataclass
 class StatementLine:
+    text: str
+    amount: Optional[float] = None
+    booking_date: Optional[datetime] = None
+    value_date: Optional[datetime] = None
+
+    def is_empty(self) -> bool:
+        return (
+            self.text.strip() == "" and
+            self.amount is None and
+            self.booking_date is None and
+            self.value_date is None
+        )
+
+@dataclass
+class IncompleteStatementLine:
     text: Optional[str] = None
     amount: Optional[float] = None
-    booking_date: Optional[tuple[int, int]] = None
-    value_date: Optional[tuple[int, int]] = None
+    booking_date: Optional[datetime | tuple[int, int]] = None
+    value_date: Optional[datetime | tuple[int, int]] = None
 
     def is_empty(self) -> bool:
         return (
@@ -19,13 +34,35 @@ class StatementLine:
             self.value_date is None
         )
 
+    def assert_complete(self) -> StatementLine:
+        assert self.text is not None, f"statement line has no text: {self}"
+        assert not isinstance(self.booking_date, tuple), f"statement line has no valid booking date: {self}"
+        assert not isinstance(self.value_date, tuple), f"statement line has no valid value date: {self}"
+        return StatementLine(self.text, self.amount, self.booking_date, self.value_date)
+
 @dataclass
 class StatementSummary:
+    date: datetime
+    sum_expenses: float
+    sum_income: float
+    old_balance: float
+    new_balance: float
+
+@dataclass
+class IncompleteStatementSummary:
     date: Optional[datetime] = None
-    old_balance: Optional[float] = None
     sum_expenses: Optional[float] = None
     sum_income: Optional[float] = None
+    old_balance: Optional[float] = None
     new_balance: Optional[float] = None
+
+    def assert_complete(self) -> StatementSummary:
+        assert self.date is not None, f"statement summary has no date: {self}"
+        assert self.old_balance is not None, f"statement summary has no old balance: {self}"
+        assert self.sum_expenses is not None, f"statement summary has no sum of expenses: {self}"
+        assert self.sum_income is not None, f"statement summary has no sum of income: {self}"
+        assert self.new_balance is not None, f"statement summary has no new balance: {self}"
+        return StatementSummary(self.date, self.sum_expenses, self.sum_income, self.old_balance, self.new_balance)
 
 @dataclass
 class Statement:
@@ -58,8 +95,8 @@ STATEMENT_LINE_BOOKING_DATE_END: float  = 330/1782
 STATEMENT_LINE_TEXT_END: float          = 1200/1782
 STATEMENT_LINE_VALUE_DATE_END: float    = 1400/1782
 STATEMENT_LINE_AMOUNT_END: float        = STATEMENT_LINE_AREA_MAX[0]
-def extract_statement_lines(fields: dict[tuple[float, float], str]) -> list[StatementLine]:
-    lines: defaultdict[float, StatementLine] = defaultdict(StatementLine)
+def extract_statement_lines(fields: dict[tuple[float, float], str]) -> list[IncompleteStatementLine]:
+    lines: defaultdict[float, IncompleteStatementLine] = defaultdict(IncompleteStatementLine)
 
     for (x, y), field in fields.items():
         if (
@@ -88,7 +125,7 @@ STATEMENT_SUMMARY_NEW_BALANCE_END: float    = STATEMENT_SUMMARY_AREA_MAX[0]
 STATEMENT_DATE_AREA_MIN: tuple[float, float] = (900/1782, 160/864)
 STATEMENT_DATE_AREA_MAX: tuple[float, float] = (1000/1782, 200/864)
 def extract_statement_summary(fields: dict[tuple[float, float], str]) -> StatementSummary:
-    summary = StatementSummary()
+    summary = IncompleteStatementSummary()
 
     for (x, y), field in fields.items():
         if (
@@ -110,17 +147,17 @@ def extract_statement_summary(fields: dict[tuple[float, float], str]) -> Stateme
             field = field.strip().split(" ", 2)[0]
             summary.date = datetime.strptime(field, "%d.%m.%Y")
 
-    return summary
+    return summary.assert_complete()
 
-def combine_statement_lines(lines: list[StatementLine]) -> list[StatementLine]:
-    combined_lines: list[StatementLine] = []
-    combined_line = StatementLine()
+def combine_statement_lines(lines: list[IncompleteStatementLine]) -> list[IncompleteStatementLine]:
+    combined_lines: list[IncompleteStatementLine] = []
+    combined_line = IncompleteStatementLine()
 
     def next_line():
         nonlocal combined_line
         if not combined_line.is_empty():
             combined_lines.append(combined_line)
-            combined_line = StatementLine()
+            combined_line = IncompleteStatementLine()
 
     for line in lines:
         if line.is_empty():
@@ -148,12 +185,46 @@ def combine_statement_lines(lines: list[StatementLine]) -> list[StatementLine]:
     next_line()
     return combined_lines
 
+def infer_statement_line_dates(lines: list[IncompleteStatementLine], statement_date: datetime) -> list[StatementLine]:
+    complete_lines: list[StatementLine] = []
+    prev_date = statement_date
+
+    def infer_date(incomplete_date: datetime | tuple[int, int]) -> datetime:
+        nonlocal prev_date
+        if isinstance(incomplete_date, datetime):
+            return incomplete_date
+
+        day, month = incomplete_date
+        match (prev_date.month, month):
+            case (1, 12):
+                year = prev_date.year - 1
+            case (12, 1):
+                year = prev_date.year + 1
+            case _:
+                assert abs(prev_date.month - month) <= 1, f"statement booking date jumped from {prev_date:%d.%m.%Y} to {day:02}.{month:02}: {line}"
+                year = prev_date.year
+
+        return datetime(year, month, day)
+
+    for line in reversed(lines):
+        if line.value_date is not None:
+            line.value_date = infer_date(line.value_date)
+
+        if line.booking_date is not None:
+            prev_date = infer_date(line.booking_date)
+            line.booking_date = prev_date
+
+        complete_lines.append(line.assert_complete())
+
+    return list(reversed(complete_lines))
+
 def parse_statement(pages: list[dict[tuple[float, float], str]]) -> Statement:
-    lines: list[StatementLine] = []
+    lines: list[IncompleteStatementLine] = []
     for page in pages[1:]:
         lines += extract_statement_lines(page)
 
     lines = combine_statement_lines(lines)
     summary = extract_statement_summary(pages[-1])
+    complete_lines = infer_statement_line_dates(lines, summary.date)
 
-    return Statement(lines, summary)
+    return Statement(complete_lines, summary)

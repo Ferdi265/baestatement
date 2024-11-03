@@ -7,7 +7,7 @@ from baestatement.format import format_cli
 def parse_args() -> Args:
     ap = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter)
 
-    ap.add_argument("-z", "--zoom",         type=float,          default=1.,     help="zoom factor for pdftohtml")
+    ap.add_argument("-z", "--zoom",         type=float,          default=1.,    help="zoom factor for pdftohtml")
     ap.add_argument("-k", "--keep-tempdir", action="store_true", default=False, help="don't delete temporary directory")
     ap.add_argument("-p", "--precision",    type=int,            default=4,     help="number of digits of coordinate precision")
     ap.add_argument("-v", "--verbose",      action="store_true", default=False, help="print debug info")

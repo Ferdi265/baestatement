@@ -13,6 +13,7 @@ classifiers         = [
 ]
 
 [project.scripts]
+"bae-dump"          = "baestatement.cli.dump:main"
 "bae-show"          = "baestatement.cli.show:main"
 
 [project.urls]

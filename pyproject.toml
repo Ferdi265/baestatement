@@ -1,0 +1,25 @@
+[build-system]
+requires            = ["setuptools>=61.0"]
+build-backend       = "setuptools.build_meta"
+
+[project]
+name                = "baestatement"
+dynamic             = ["readme", "version", "dependencies"]
+authors             = [{ name = "Ferdinand Bachmann", email = "ferdinand.bachmann@yrlf.at" }]
+description         = "a parser for BankAustria e-Statement PDF files"
+requires-python     = ">=3.12"
+classifiers         = [
+    "Programming Language :: Python :: 3",
+]
+
+[project.scripts]
+"bae-parse"         = "baestatement.cli.parse:main"
+
+[project.urls]
+"Homepage"          = "https://github.com/Ferdi265/baestatement"
+"Bug Tracker"       = "https://github.com/Ferdi265/baestatement/issues"
+
+[tool.setuptools.dynamic]
+version             = { attr = "baestatement.version.__version__" }
+readme              = { file = ["README.md"], content-type = "text/markdown" }
+dependencies        = { file = ["requirements.txt"] }

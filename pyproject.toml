@@ -13,7 +13,7 @@ classifiers         = [
 ]
 
 [project.scripts]
-"bae-parse"         = "baestatement.cli.parse:main"
+"bae-show"          = "baestatement.cli.show:main"
 
 [project.urls]
 "Homepage"          = "https://github.com/Ferdi265/baestatement"

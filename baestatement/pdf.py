@@ -44,8 +44,8 @@ def extract_page_fields(page: Tag, precision: int = 4, *args, **kwargs) -> dict[
     fields: dict[tuple[float, float], str] = {}
 
     for field in page.find_all("p"):
-        x, y = extract_tag_css_position(field)
-        x, y = x / width, y / height
+        abs_x, abs_y = extract_tag_css_position(field)
+        x, y = abs_x / width, abs_y / height
         x, y = round(x, precision), round(y, precision)
         fields[(x, y)] = field.text.replace("\xa0", " ")
 

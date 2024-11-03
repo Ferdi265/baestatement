@@ -40,7 +40,7 @@ def parse_field_date(field: str) -> Optional[tuple[int, int]]:
     day, month = field.split(".")
     return int(day), int(month)
 
-def parse_field_amount(field: str) -> float:
+def parse_field_amount(field: str) -> Optional[float]:
     field = field.strip()
     if field == "":
         return None
@@ -116,7 +116,7 @@ def combine_statement_lines(lines: list[StatementLine]) -> list[StatementLine]:
     combined_lines: list[StatementLine] = []
     combined_line = StatementLine()
 
-    def next_line() -> StatementLine:
+    def next_line():
         nonlocal combined_line
         if not combined_line.is_empty():
             combined_lines.append(combined_line)

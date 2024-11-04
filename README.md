@@ -14,4 +14,8 @@ a parser for BankAustria e-Statement PDF files.
 - `bae-dump`: Dump BankAustria e-Statement PDFs as Python expression.
 - `bae-csv`: Convert BankAustria e-Statement PDFs to CSV.
 
-Future versions will support more formats, categorization, filtering, etc...
+Small proof-of-concept library and tools for working with BankAustria
+e-Statement PDFs.
+
+Future versions will potentially support more formats, categorization,
+filtering, etc..., if I ever get to expanding this.

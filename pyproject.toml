@@ -15,6 +15,7 @@ classifiers         = [
 [project.scripts]
 "bae-dump"          = "baestatement.cli.dump:main"
 "bae-show"          = "baestatement.cli.show:main"
+"bae-csv"           = "baestatement.cli.csv:main"
 
 [project.urls]
 "Homepage"          = "https://github.com/Ferdi265/baestatement"

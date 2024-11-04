@@ -7,12 +7,10 @@ def dump_line(line: StatementLine) -> str:
 
     text_lines = line.text.split("\n")
     for i, text_line in enumerate(text_lines):
-        if i == 0:
-            formatted += f"                {repr(text_line + '\n')}\n"
-        elif i < len(text_lines) - 1:
-            formatted += f"                {repr(text_line + '\n')}\n"
-        else:
-            formatted += f"                {repr(text_line + '\n')}\n"
+        if i < len(text_lines) - 1:
+            text_line += "\n"
+
+        formatted += f"                {repr(text_line)}\n"
 
     formatted += f"            ),\n"
     formatted += f"            amount={fmt_amount_repr(line.amount)}, booking_date={fmt_date_repr(line.booking_date)}, value_date={fmt_date_repr(line.value_date)},\n"

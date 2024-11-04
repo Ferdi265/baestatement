@@ -12,6 +12,7 @@ def add_default_options(ap: ArgumentParser, with_positionals: bool = True):
     ap.add_argument("-z", "--zoom",         type=float,          default=1.,    help="zoom factor for pdftohtml")
     ap.add_argument("-k", "--keep-tempdir", action="store_true", default=False, help="don't delete temporary directory")
     ap.add_argument("-p", "--precision",    type=int,            default=4,     help="number of digits of coordinate precision")
+    ap.add_argument("-s", "--strip",        action="store_true", default=False, help="remove comments from bank statement")
     ap.add_argument("-v", "--verbose",      action="store_true", default=False, help="print debug info")
 
     if with_positionals:
@@ -27,4 +28,7 @@ def parse_statement_from_pdf(args: Args) -> Statement:
     )
 
     # parse the statement
-    return parse_statement(pages)
+    return parse_statement(
+        pages,
+        strip = args.strip
+    )

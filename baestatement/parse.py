@@ -19,6 +19,13 @@ class StatementLine:
             self.value_date is None
         )
 
+    def is_comment(self) -> bool:
+        return (
+            self.amount is None and
+            self.booking_date is None and
+            self.value_date is None
+        )
+
 @dataclass
 class IncompleteStatementLine:
     text: Optional[str] = None
@@ -218,7 +225,18 @@ def infer_statement_line_dates(lines: list[IncompleteStatementLine], statement_d
 
     return list(reversed(complete_lines))
 
-def parse_statement(pages: list[dict[tuple[float, float], str]]) -> Statement:
+def strip_comments(lines: list[StatementLine]) -> list[StatementLine]:
+    stripped: list[StatementLine] = []
+
+    for line in lines:
+        if line.is_comment():
+            continue
+
+        stripped.append(line)
+
+    return stripped
+
+def parse_statement(pages: list[dict[tuple[float, float], str]], strip: bool) -> Statement:
     lines: list[IncompleteStatementLine] = []
     for page in pages[1:]:
         lines += extract_statement_lines(page)
@@ -226,5 +244,8 @@ def parse_statement(pages: list[dict[tuple[float, float], str]]) -> Statement:
     lines = combine_statement_lines(lines)
     summary = extract_statement_summary(pages[-1])
     complete_lines = infer_statement_line_dates(lines, summary.date)
+
+    if strip:
+        complete_lines = strip_comments(complete_lines)
 
     return Statement(complete_lines, summary)

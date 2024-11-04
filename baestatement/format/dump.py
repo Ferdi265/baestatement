@@ -1,18 +1,5 @@
-from typing import Optional
-from datetime import datetime
 from ..parse import Statement, StatementLine, StatementSummary
-
-def fmt_amount(amount: Optional[float]) -> str:
-    if amount is None:
-        return str(amount)
-
-    return f"{amount:.2f}"
-
-def fmt_date(date: Optional[datetime]) -> str:
-    if date is None:
-        return str(date)
-
-    return f"datetime({date.year}, {date.month}, {date.day})"
+from .util import fmt_amount, fmt_date
 
 def dump_line(line: StatementLine) -> str:
     formatted = "        StatementLine(\n"

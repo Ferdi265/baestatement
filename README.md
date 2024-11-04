@@ -4,6 +4,7 @@ a parser for BankAustria e-Statement PDF files.
 
 ## Installation
 
+- install `pdftohtml` from the `poppler` (Arch) or `poppler-utils` (Debian/Ubuntu) package
 - run `pipx install git+https://github.com/Ferdi265/baestatement` to install
 - run `pipx install --editable .` for a development install
 

@@ -18,10 +18,10 @@ def add_default_options(ap: ArgumentParser, with_positionals: bool = True):
     if with_positionals:
         ap.add_argument("pdf",              type=Path,                          help="path to BankAustria eStatement PDF file")
 
-def parse_statement_from_pdf(args: Args) -> Statement:
+def parse_statement_from_pdf(pdf: Path, args: Args) -> Statement:
     # extract page text and coordinates from pdf
     pages = pdf_to_page_fields(
-        args.pdf,
+        pdf,
         keep_tempdir = args.keep_tempdir,
         zoom = args.zoom,
         precision = args.precision

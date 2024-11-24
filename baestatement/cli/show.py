@@ -10,7 +10,7 @@ def parse_args() -> Args:
 
 def main():
     args = parse_args()
-    stmt = parse_statement_from_pdf(args)
+    stmt = parse_statement_from_pdf(args.pdf, args)
 
     print(format_cli(stmt))
 

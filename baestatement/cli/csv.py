@@ -13,7 +13,7 @@ def parse_args() -> Args:
 
 def main():
     args = parse_args()
-    stmt = parse_statement_from_pdf(args)
+    stmt = parse_statement_from_pdf(args.pdf, args)
 
     formatted = format_csv(stmt, with_header = not args.no_header)
     if args.output is None:

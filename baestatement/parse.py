@@ -54,6 +54,8 @@ class StatementSummary:
     sum_income: float
     old_balance: float
     new_balance: float
+    closing_date: Optional[datetime] = None
+    closing_balance: Optional[float] = None
 
 @dataclass
 class IncompleteStatementSummary:
@@ -62,6 +64,8 @@ class IncompleteStatementSummary:
     sum_income: Optional[float] = None
     old_balance: Optional[float] = None
     new_balance: Optional[float] = None
+    closing_date: Optional[datetime] = None
+    closing_balance: Optional[float] = None
 
     def assert_complete(self) -> StatementSummary:
         assert self.date is not None, f"statement summary has no date: {self}"
@@ -69,7 +73,7 @@ class IncompleteStatementSummary:
         assert self.sum_expenses is not None, f"statement summary has no sum of expenses: {self}"
         assert self.sum_income is not None, f"statement summary has no sum of income: {self}"
         assert self.new_balance is not None, f"statement summary has no new balance: {self}"
-        return StatementSummary(self.date, self.sum_expenses, self.sum_income, self.old_balance, self.new_balance)
+        return StatementSummary(self.date, self.sum_expenses, self.sum_income, self.old_balance, self.new_balance, self.closing_date, self.closing_balance)
 
 @dataclass
 class Statement:
@@ -131,7 +135,7 @@ STATEMENT_SUMMARY_SUM_INCOME_END: float     = 1300/1782
 STATEMENT_SUMMARY_NEW_BALANCE_END: float    = STATEMENT_SUMMARY_AREA_MAX[0]
 STATEMENT_DATE_AREA_MIN: tuple[float, float] = (900/1782, 160/864)
 STATEMENT_DATE_AREA_MAX: tuple[float, float] = (1000/1782, 200/864)
-def extract_statement_summary(fields: dict[tuple[float, float], str]) -> StatementSummary:
+def extract_statement_summary(fields: dict[tuple[float, float], str]) -> IncompleteStatementSummary:
     summary = IncompleteStatementSummary()
 
     for (x, y), field in fields.items():
@@ -154,7 +158,7 @@ def extract_statement_summary(fields: dict[tuple[float, float], str]) -> Stateme
             field = field.strip().split(" ", 2)[0]
             summary.date = datetime.strptime(field, "%d.%m.%Y")
 
-    return summary.assert_complete()
+    return summary
 
 def combine_statement_lines(lines: list[IncompleteStatementLine]) -> list[IncompleteStatementLine]:
     combined_lines: list[IncompleteStatementLine] = []
@@ -225,6 +229,18 @@ def infer_statement_line_dates(lines: list[IncompleteStatementLine], statement_d
 
     return list(reversed(complete_lines))
 
+CLOSING_BOOKING = r"Ihr Kontostand per ([0-9]{2}\.[0-9]{2}\.[0-9]{4}): EUR ([0-9.,]+)"
+def infer_closing_booking(lines: list[StatementLine]) -> Optional[datetime]:
+    for line in lines:
+        if not line.is_comment():
+            continue
+
+        m = re.match(CLOSING_BOOKING, line.text)
+        if m is not None:
+            return datetime.strptime(m.group(1), "%d.%m.%Y"), parse_field_amount(m.group(2))
+
+    return None, None
+
 def strip_comments(lines: list[StatementLine]) -> list[StatementLine]:
     stripped: list[StatementLine] = []
 
@@ -244,8 +260,9 @@ def parse_statement(pages: list[dict[tuple[float, float], str]], strip: bool) ->
     lines = combine_statement_lines(lines)
     summary = extract_statement_summary(pages[-1])
     complete_lines = infer_statement_line_dates(lines, summary.date)
+    summary.closing_date, summary.closing_balance = infer_closing_booking(complete_lines)
 
     if strip:
         complete_lines = strip_comments(complete_lines)
 
-    return Statement(complete_lines, summary)
+    return Statement(complete_lines, summary.assert_complete())

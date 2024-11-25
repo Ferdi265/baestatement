@@ -17,7 +17,9 @@ def format_cli(stmt: Statement) -> str:
 
             formatted += f"{begin_marker} {text_line:<57} {end_marker}\n"
 
-    formatted += f">> date: {fmt_date(stmt.summary.date)}\n"
-    formatted += f"   sum expenses: {fmt_amount(stmt.summary.sum_expenses)}, sum income:  {fmt_amount(stmt.summary.sum_income) }\n"
-    formatted += f"   old balance:  {fmt_amount(stmt.summary.old_balance )}, new balance: {fmt_amount(stmt.summary.new_balance)}"
-    return formatted
+    formatted += f">> date:         {fmt_date(stmt.summary.date)}\n"
+    if stmt.summary.closing_date is not None and stmt.summary.closing_balance is not None:
+        formatted += f"   closing date: {fmt_date(stmt.summary.closing_date)}, closing balance:{fmt_amount(stmt.summary.closing_balance)}\n"
+    formatted += f"   sum expenses:{fmt_amount(stmt.summary.sum_expenses)}, sum income:     {fmt_amount(stmt.summary.sum_income) }\n"
+    formatted += f"   old balance: {fmt_amount(stmt.summary.old_balance )}, new balance:    {fmt_amount(stmt.summary.new_balance)}\n"
+    return formatted.rstrip("\n")

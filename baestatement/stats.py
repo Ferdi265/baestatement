@@ -18,7 +18,7 @@ class StatementStats:
 def sort(statements: list[Statement]) -> list[Statement]:
     return list(sorted(statements, key=lambda stmt: stmt.summary.date))
 
-def analyze(statements: list[Statement], avg_period: int = 31) -> StatementStats:
+def analyze(statements: list[Statement], avg_period: int = 31, difference: bool = False) -> StatementStats:
     statements = sort(statements)
 
     lines = itertools.chain.from_iterable(stmt.lines for stmt in statements)
@@ -42,16 +42,21 @@ def analyze(statements: list[Statement], avg_period: int = 31) -> StatementStats
 
     i, cur_date = next(dates)
     cur_balance = start_balance
+    cur_difference = 0
     last_balances: deque[float] = deque([cur_balance], maxlen = avg_period)
+    last_differences: deque[float] = deque([cur_difference], maxlen = avg_period)
     def next_date():
-        nonlocal i, cur_date
-        # add date to stats
+        nonlocal i, cur_date, cur_difference
+        # update history table
         last_balances.append(cur_balance)
+        cur_difference = cur_balance - last_balances[0]
+        last_differences.append(cur_difference)
+        # add date to stats
         stats.datetime[i] = cur_date
-        stats.cur_balance[i] = cur_balance
-        stats.avg_balance[i] = np.average(last_balances)
-        stats.min_balance[i] = np.min(last_balances)
-        stats.max_balance[i] = np.max(last_balances)
+        stats.cur_balance[i] = cur_difference if difference else cur_balance
+        stats.avg_balance[i] = np.average(last_differences if difference else last_balances)
+        stats.min_balance[i] = np.min(last_differences if difference else last_balances)
+        stats.max_balance[i] = np.max(last_differences if difference else last_balances)
         # go to next date
         i, cur_date = next(dates)
 

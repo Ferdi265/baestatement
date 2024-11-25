@@ -17,6 +17,7 @@ classifiers         = [
 "bae-show"          = "baestatement.cli.show:main"
 "bae-csv"           = "baestatement.cli.csv:main"
 "bae-plot"          = "baestatement.cli.plot:main"
+"bae-rename"        = "baestatement.cli.rename:main"
 
 [project.urls]
 "Homepage"          = "https://github.com/Ferdi265/baestatement"

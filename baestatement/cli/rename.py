@@ -13,7 +13,11 @@ def parse_args() -> Args:
 
 def main():
     args = parse_args()
-    pdfs = glob(str(args.dir / "*.pdf"))
+
+    if args.dir.is_file():
+        pdfs = [args.dir]
+    else:
+        pdfs = glob(str(args.dir / "*.pdf"))
 
     error = False
     stmts = { Path(pdf): parse_statement_from_pdf(pdf, args) for pdf in pdfs }

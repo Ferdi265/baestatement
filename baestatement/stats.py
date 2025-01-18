@@ -1,11 +1,13 @@
+from typing import Callable
 from dataclasses import dataclass, field
 from datetime import timedelta
 from collections import deque
 import itertools
+import calendar
 import numpy as np
 import numpy.typing as npt
 
-from .parse import Statement
+from .parse import Statement, StatementLine
 
 @dataclass
 class StatementStats:
@@ -77,4 +79,98 @@ def analyze(statements: list[Statement], avg_period: int = 31, difference: bool 
     except StopIteration:
         pass
 
+    return stats
+
+@dataclass
+class StatementPeriodStats:
+    labels: list[str] | list[int] = field(default_factory=list)
+    avg_expenses: np.ndarray = field(default_factory=lambda: np.zeros(0, dtype='float64'))
+    min_expenses: np.ndarray = field(default_factory=lambda: np.zeros(0, dtype='float64'))
+    max_expenses: np.ndarray = field(default_factory=lambda: np.zeros(0, dtype='float64'))
+    avg_income: np.ndarray = field(default_factory=lambda: np.zeros(0, dtype='float64'))
+    min_income: np.ndarray = field(default_factory=lambda: np.zeros(0, dtype='float64'))
+    max_income: np.ndarray = field(default_factory=lambda: np.zeros(0, dtype='float64'))
+
+def analyze_period(statements: list[Statement], categorize: Callable[[StatementLine], int], cumulative: bool = False) -> StatementPeriodStats:
+    statements = sort(statements)
+
+    lines = itertools.chain.from_iterable(stmt.lines for stmt in statements)
+    lines = filter(lambda line: line.value_date is not None and line.amount, lines)
+    lines = list(sorted(lines, key=lambda line: line.value_date))
+
+    num_categories = max(categorize(line) for line in lines) + 1
+    num_expenses = np.zeros(num_categories, dtype=int)
+    sum_expenses = np.zeros(num_categories, dtype='float64')
+    num_income = np.zeros(num_categories, dtype=int)
+    sum_income = np.zeros(num_categories, dtype='float64')
+    stats = StatementPeriodStats(
+        labels = list(range(num_categories)),
+        avg_expenses = np.zeros(num_categories, dtype='float64'),
+        min_expenses = np.zeros(num_categories, dtype='float64'),
+        max_expenses = np.zeros(num_categories, dtype='float64'),
+        avg_income = np.zeros(num_categories, dtype='float64'),
+        min_income = np.zeros(num_categories, dtype='float64'),
+        max_income = np.zeros(num_categories, dtype='float64'),
+    )
+
+    stats.min_expenses[:] = np.inf
+    stats.min_income[:] = np.inf
+
+    category: int | None = None
+    next_category: int
+    cur_expense_sum: float = 0.
+    cur_income_sum: float = 0.
+    def add_stats():
+        nonlocal category, cur_expense_sum, cur_income_sum
+        if category is None:
+            return
+
+        num_expenses[category] += 1
+        sum_expenses[category] += cur_expense_sum
+        stats.min_expenses[category] = min(stats.min_expenses[category], cur_expense_sum)
+        stats.max_expenses[category] = max(stats.max_expenses[category], cur_expense_sum)
+
+        num_income[category] += 1
+        sum_income[category] += cur_income_sum
+        stats.min_income[category] = min(stats.min_income[category], cur_income_sum)
+        stats.max_income[category] = max(stats.max_income[category], cur_income_sum)
+
+        if not cumulative or next_category < category:
+            cur_income_sum = 0.
+            cur_expense_sum = 0.
+
+    for line in lines:
+        next_category = categorize(line)
+        if next_category != category:
+            add_stats()
+            category = next_category
+
+        if line.amount < 0:
+            cur_expense_sum += abs(line.amount)
+        else:
+            cur_income_sum += abs(line.amount)
+
+    add_stats()
+
+    stats.avg_expenses = sum_expenses / num_expenses
+    stats.avg_income = sum_income / num_income
+
+    return stats
+
+def analyze_yearly(statements: list[Statement], cumulative: bool = False) -> StatementPeriodStats:
+    categorize = lambda stmt: stmt.value_date.month - 1
+    stats = analyze_period(statements, categorize, cumulative = cumulative)
+    stats.labels = [calendar.month_name[i+1] for i in stats.labels]
+    return stats
+
+def analyze_monthly(statements: list[Statement], cumulative: bool = False) -> StatementPeriodStats:
+    categorize = lambda stmt: stmt.value_date.day - 1
+    stats = analyze_period(statements, categorize, cumulative = cumulative)
+    stats.labels = [i+1 for i in stats.labels]
+    return stats
+
+def analyze_weekly(statements: list[Statement], cumulative: bool = False) -> StatementPeriodStats:
+    categorize = lambda stmt: stmt.value_date.weekday()
+    stats = analyze_period(statements, categorize, cumulative = cumulative)
+    stats.labels = [calendar.day_name[i] for i in stats.labels]
     return stats

@@ -10,7 +10,7 @@ from baestatement.stats import analyze_period, analyze_yearly, analyze_monthly, 
 
 def parse_args() -> Args:
     ap = create_default_argparser()
-    add_default_options(ap, with_positionals=False)
+    add_default_options(ap, with_date_options=True, with_positionals=False)
     ap.add_argument("--weekly", dest="period", action="store_const", const="week", help="plot weekly expenses")
     ap.add_argument("--monthly", dest="period", action="store_const", const="month", help="plot monthly expenses (default)")
     ap.add_argument("--yearly", dest="period", action="store_const", const="year", help="plot yearly expenses")
@@ -25,6 +25,7 @@ def main():
         args.period = "month"
 
     stmts = [parse_statement_from_pdf(pdf, args) for pdf in pdfs]
+    stmts = take_date_range(stmts, args.start_date, args.end_date)
     match args.period:
         case "month":
             stats = analyze_monthly(stmts, cumulative = args.cumulative)

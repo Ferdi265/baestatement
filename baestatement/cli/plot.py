@@ -6,11 +6,11 @@ import matplotlib.pyplot as plt
 from matplotlib.ticker import FormatStrFormatter
 from baestatement.cli.util import create_default_argparser, add_default_options
 from baestatement.cli.util import parse_statement_from_pdf
-from baestatement.stats import analyze
+from baestatement.stats import analyze, take_date_range
 
 def parse_args() -> Args:
     ap = create_default_argparser()
-    add_default_options(ap, with_positionals=False)
+    add_default_options(ap, with_date_options=True, with_positionals=False)
     ap.add_argument("--avg-period", type=int, default=31, help="averaging period (default is 31 days)")
     ap.add_argument("--difference", action="store_true", default=False, help="plot differences instead of absolute balances")
     ap.add_argument("dir", type=Path, help="path to folder with BankAustria eStatement PDF files")
@@ -21,6 +21,7 @@ def main():
     pdfs = glob(str(args.dir / "*.pdf"))
 
     stmts = [parse_statement_from_pdf(pdf, args) for pdf in pdfs]
+    stmts = take_date_range(stmts, args.start_date, args.end_date)
     stats = analyze(stmts, avg_period=args.avg_period, difference=args.difference)
 
     fig, ax = plt.subplots()

@@ -1,13 +1,13 @@
-from typing import Callable
+from typing import Callable, Optional
 from dataclasses import dataclass, field
-from datetime import timedelta
+from datetime import timedelta, datetime
 from collections import deque
 import itertools
 import calendar
 import numpy as np
 import numpy.typing as npt
 
-from .parse import Statement, StatementLine
+from .parse import Statement, StatementLine, IncompleteStatementSummary
 
 @dataclass
 class StatementStats:
@@ -19,6 +19,68 @@ class StatementStats:
 
 def sort(statements: list[Statement]) -> list[Statement]:
     return list(sorted(statements, key=lambda stmt: stmt.summary.date))
+
+def take_date_range(statements: list[Statement], start_date: Optional[datetime], end_date: Optional[datetime]) -> list[Statement]:
+    # do nothing if no dates given
+    if start_date is None and end_date is None:
+        return statements
+
+    # fill in missing start/end date
+    statements = list(sorted(statements, key=lambda stmt: stmt.summary.date))
+    all_lines = itertools.chain.from_iterable(stmt.lines for stmt in statements)
+    all_lines = filter(lambda line: line.value_date is not None and line.amount, all_lines)
+    all_lines = list(sorted(all_lines, key=lambda line: line.value_date))
+    if start_date is None:
+        start_date = all_lines[0].value_date
+    if end_date is None:
+        end_date = all_lines[-1].value_date
+
+    # process statements
+    new_statements: list[Statement] = []
+    for stmt in statements:
+        stmt_lines = filter(lambda line: line.value_date is not None and line.amount, stmt.lines)
+        stmt_lines = list(sorted(stmt_lines, key=lambda line: line.value_date))
+
+        # stmt dates fully outside range
+        if stmt_lines[-1].value_date < start_date or stmt_lines[0].value_date > end_date:
+            continue
+        # stmt dates fully inside range
+        elif stmt_lines[0].value_date >= start_date and stmt_lines[-1].value_date <= end_date:
+            new_statements.append(stmt)
+        # stmt dates partially inside range
+        else:
+            # need to reconstruct new statement summary
+            range_lines = list(filter(lambda line: line.value_date >= start_date and line.value_date <= end_date, stmt_lines))
+            cur_balance = stmt.summary.old_balance
+            summary = IncompleteStatementSummary(
+                date = min(stmt.summary.date, end_date),
+                sum_income = 0.,
+                sum_expenses = 0.,
+                old_balance = cur_balance,
+                new_balance = cur_balance,
+            )
+            # loop over stmt_lines to reconstruct balance
+            for line in stmt_lines:
+                cur_balance += line.amount
+                if line.value_date < start_date:
+                    summary.old_balance = cur_balance
+                if line.value_date <= end_date:
+                    summary.new_balance = cur_balance
+                if line.value_date >= start_date and line.value_date <= end_date:
+                    if line.amount > 0:
+                        summary.sum_income += line.amount
+                    else:
+                        summary.sum_expenses += line.amount
+            # reconstruct Statement
+            assert summary.sum_income <= stmt.summary.sum_income, f"partial statement has more income ({summary.sum_income} vs {stmt.summary.sum_income})"
+            assert summary.sum_expenses >= stmt.summary.sum_expenses, f"partial statement has more expenses ({summary.sum_expenses} vs {stmt.summary.sum_expenses})"
+            new_statements.append(Statement(
+                lines = range_lines,
+                summary = summary.assert_complete()
+            ))
+
+    return new_statements
+
 
 def analyze(statements: list[Statement], avg_period: int = 31, difference: bool = False) -> StatementStats:
     statements = sort(statements)

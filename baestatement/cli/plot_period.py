@@ -25,7 +25,7 @@ def main():
         args.period = "month"
 
     stmts = [parse_statement_from_pdf(pdf, args) for pdf in pdfs]
-    stmts = take_date_range(stmts, args.start_date, args.end_date)
+    stmts, args.start_date, args.end_date = take_date_range(stmts, args.start_date, args.end_date)
     match args.period:
         case "month":
             stats = analyze_monthly(stmts, cumulative = args.cumulative)

@@ -15,6 +15,7 @@ classifiers         = [
 [project.scripts]
 "bae-dump"          = "baestatement.cli.dump:main"
 "bae-show"          = "baestatement.cli.show:main"
+"bae-analyze"       = "baestatement.cli.analyze:main"
 "bae-csv"           = "baestatement.cli.csv:main"
 "bae-plot"          = "baestatement.cli.plot:main"
 "bae-plot-period"   = "baestatement.cli.plot_period:main"

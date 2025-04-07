@@ -21,7 +21,7 @@ def main():
     pdfs = glob(str(args.dir / "*.pdf"))
 
     stmts = [parse_statement_from_pdf(pdf, args) for pdf in pdfs]
-    stmts = take_date_range(stmts, args.start_date, args.end_date)
+    stmts, args.start_date, args.end_date = take_date_range(stmts, args.start_date, args.end_date)
     stats = analyze(stmts, avg_period=args.avg_period, difference=args.difference)
 
     fig, ax = plt.subplots()

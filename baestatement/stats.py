@@ -20,10 +20,9 @@ class StatementStats:
 def sort(statements: list[Statement]) -> list[Statement]:
     return list(sorted(statements, key=lambda stmt: stmt.summary.date))
 
-def take_date_range(statements: list[Statement], start_date: Optional[datetime], end_date: Optional[datetime]) -> list[Statement]:
+def take_date_range(statements: list[Statement], start_date: Optional[datetime], end_date: Optional[datetime]) -> tuple[list[Statement], datetime, datetime]:
     # do nothing if no dates given
-    if start_date is None and end_date is None:
-        return statements
+    is_noop = start_date is None and end_date is None
 
     # fill in missing start/end date
     statements = list(sorted(statements, key=lambda stmt: stmt.summary.date))
@@ -34,6 +33,10 @@ def take_date_range(statements: list[Statement], start_date: Optional[datetime],
         start_date = all_lines[0].value_date
     if end_date is None:
         end_date = all_lines[-1].value_date
+
+    # do nothing if no dates given
+    if is_noop:
+        return statements, start_date, end_date
 
     # process statements
     new_statements: list[Statement] = []
@@ -79,7 +82,7 @@ def take_date_range(statements: list[Statement], start_date: Optional[datetime],
                 summary = summary.assert_complete()
             ))
 
-    return new_statements
+    return new_statements, start_date, end_date
 
 
 def analyze(statements: list[Statement], avg_period: int = 31, difference: bool = False) -> StatementStats:

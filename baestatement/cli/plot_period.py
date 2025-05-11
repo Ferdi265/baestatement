@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from matplotlib.ticker import FormatStrFormatter
 from baestatement.cli.util import create_default_argparser, add_default_options
 from baestatement.cli.util import parse_statement_from_pdf
-from baestatement.stats import analyze_period, analyze_yearly, analyze_monthly, analyze_weekly
+from baestatement.stats import analyze_period, analyze_yearly, analyze_monthly, analyze_weekly, take_date_range
 
 def parse_args() -> Args:
     ap = create_default_argparser()

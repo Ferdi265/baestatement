@@ -20,7 +20,7 @@ def parse_args() -> Args:
 
 def main():
     args = parse_args()
-    files = find_statement_files(args.path)
+    files = find_statement_files(args.dir)
     if args.period is None:
         args.period = "month"
 

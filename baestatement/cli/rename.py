@@ -13,7 +13,7 @@ def parse_args() -> Args:
 
 def main():
     args = parse_args()
-    files = find_statement_files(args.path)
+    files = find_statement_files(args.dir)
 
     error = False
     stmts = { Path(file): parse_statement_from_path(file, args) for file in files }

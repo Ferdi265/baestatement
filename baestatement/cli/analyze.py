@@ -16,7 +16,7 @@ def parse_args() -> Args:
 
 def main():
     args = parse_args()
-    files = find_statement_files(args.path)
+    files = find_statement_files(args.dir)
 
     stmts = [parse_statement_from_path(file, args) for file in files]
     stmts, args.start_date, args.end_date = take_date_range(stmts, args.start_date, args.end_date)

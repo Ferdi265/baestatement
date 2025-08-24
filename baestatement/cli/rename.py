@@ -18,7 +18,8 @@ def main():
     error = False
     stmts = { Path(file): parse_statement_from_path(file, args) for file in files }
     for file, stmt in stmts.items():
-        expected_name = f"estatement-{stmt.summary.date:%Y-%m-%d}.file"
+        ext = file.name.rsplit(".", 1)[-1]
+        expected_name = f"estatement-{stmt.summary.date:%Y-%m-%d}.{ext}"
         expected_path = file.parent / expected_name
         if file == expected_path:
             continue

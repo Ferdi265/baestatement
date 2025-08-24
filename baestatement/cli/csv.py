@@ -1,7 +1,7 @@
 from argparse import Namespace as Args
 from pathlib import Path
 from baestatement.cli.util import create_default_argparser, add_default_options
-from baestatement.cli.util import parse_statement_from_pdf
+from baestatement.cli.util import parse_statement_from_path
 from baestatement.format import format_csv
 
 def parse_args() -> Args:
@@ -13,7 +13,7 @@ def parse_args() -> Args:
 
 def main():
     args = parse_args()
-    stmt = parse_statement_from_pdf(args.pdf, args)
+    stmt = parse_statement_from_path(args.path, args)
 
     formatted = format_csv(stmt, with_header = not args.no_header)
     if args.output is None:

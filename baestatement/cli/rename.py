@@ -3,7 +3,7 @@ from pathlib import Path
 from glob import glob
 import sys
 from baestatement.cli.util import create_default_argparser, add_default_options
-from baestatement.cli.util import parse_statement_from_pdf
+from baestatement.cli.util import find_statement_files, parse_statement_from_path
 
 def parse_args() -> Args:
     ap = create_default_argparser()
@@ -13,27 +13,23 @@ def parse_args() -> Args:
 
 def main():
     args = parse_args()
-
-    if args.dir.is_file():
-        pdfs = [args.dir]
-    else:
-        pdfs = glob(str(args.dir / "*.pdf"))
+    files = find_statement_files(args.path)
 
     error = False
-    stmts = { Path(pdf): parse_statement_from_pdf(pdf, args) for pdf in pdfs }
-    for pdf, stmt in stmts.items():
-        expected_name = f"estatement-{stmt.summary.date:%Y-%m-%d}.pdf"
-        expected_path = pdf.parent / expected_name
-        if pdf == expected_path:
+    stmts = { Path(file): parse_statement_from_path(file, args) for file in files }
+    for file, stmt in stmts.items():
+        expected_name = f"estatement-{stmt.summary.date:%Y-%m-%d}.file"
+        expected_path = file.parent / expected_name
+        if file == expected_path:
             continue
 
         if expected_path.exists():
-            print(f"error: can't rename {pdf.name!r} to {expected_name!r}, new name already exists")
+            print(f"error: can't rename {file.name!r} to {expected_name!r}, new name already exists")
             error = True
             continue
 
-        pdf.rename(expected_path)
-        print(f"info: renamed {pdf.name!r} to {expected_name!r}")
+        file.rename(expected_path)
+        print(f"info: renamed {file.name!r} to {expected_name!r}")
 
     if error:
         sys.exit(1)

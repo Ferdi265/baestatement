@@ -5,7 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.ticker import FormatStrFormatter
 from baestatement.cli.util import create_default_argparser, add_default_options
-from baestatement.cli.util import parse_statement_from_pdf
+from baestatement.cli.util import find_statement_files, parse_statement_from_path
 from baestatement.stats import analyze_period, analyze_yearly, analyze_monthly, analyze_weekly, take_date_range
 
 def parse_args() -> Args:
@@ -20,11 +20,11 @@ def parse_args() -> Args:
 
 def main():
     args = parse_args()
-    pdfs = glob(str(args.dir / "*.pdf"))
+    files = find_statement_files(args.path)
     if args.period is None:
         args.period = "month"
 
-    stmts = [parse_statement_from_pdf(pdf, args) for pdf in pdfs]
+    stmts = [parse_statement_from_path(file, args) for file in files]
     stmts, args.start_date, args.end_date = take_date_range(stmts, args.start_date, args.end_date)
     match args.period:
         case "month":

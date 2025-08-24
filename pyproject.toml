@@ -17,6 +17,7 @@ classifiers         = [
 "bae-show"          = "baestatement.cli.show:main"
 "bae-analyze"       = "baestatement.cli.analyze:main"
 "bae-csv"           = "baestatement.cli.csv:main"
+"bae-json"          = "baestatement.cli.json:main"
 "bae-plot"          = "baestatement.cli.plot:main"
 "bae-plot-period"   = "baestatement.cli.plot_period:main"
 "bae-rename"        = "baestatement.cli.rename:main"
